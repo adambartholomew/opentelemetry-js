@@ -73,14 +73,13 @@ export abstract class InstrumentationBase<T = any>
       return exports;
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const version = require(path.join(baseDir, 'package.json')).version;
+    const version = this.getPackageVersion(baseDir)
     module.moduleVersion = version;
     if (module.name === name) {
       // main module
       if (
         typeof version === 'string' &&
-        isSupported(module.supportedVersions, version)
+        this.isSupported(module.supportedVersions, version)
       ) {
         if (typeof module.patch === 'function') {
           module.moduleExports = exports;
@@ -93,7 +92,7 @@ export abstract class InstrumentationBase<T = any>
       // internal file
       const files = module.files ?? [];
       const file = files.find(file => file.name === name);
-      if (file && isSupported(file.supportedVersions, version)) {
+      if (file && this.isSupported(file.supportedVersions, version)) {
         file.moduleExports = exports;
         if (this._enabled) {
           return file.patch(exports, module.moduleVersion);
@@ -165,10 +164,38 @@ export abstract class InstrumentationBase<T = any>
   public isEnabled() {
     return this._enabled;
   }
-}
 
-function isSupported(supportedVersions: string[], version: string): boolean {
-  return supportedVersions.some(supportedVersion => {
-    return semver.satisfies(version, supportedVersion);
-  });
+  /**
+   * Attempts to retrieve the package.json version number from the specified baseDir.
+   * @param baseDir Directory to load package.json
+   * @returns Semver version number
+   */
+  private getPackageVersion(baseDir: string): string | undefined {
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      const packageFile = require(path.join(baseDir, 'package.json'));
+      if (packageFile) {
+        return packageFile.version;
+      }
+    } catch (err) {
+      // noop
+    }
+    return undefined;
+  }
+
+  /**
+   * Checks if the module semver version is part of the supportedVersions array.
+   * Exception for cases where supportedVersions contains a wildcard (*) entry.
+   * @param supportedVersions Semver versions supported
+   * @param version Current module version
+   * @returns boolean
+   */
+  private isSupported(supportedVersions: string[], version: string | undefined): boolean {
+    if (supportedVersions.includes('*')) {
+      return true;
+    }
+    return supportedVersions.some(supportedVersion => {
+      return version && semver.satisfies(version, supportedVersion);
+    });
+  }
 }
