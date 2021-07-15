@@ -13,6 +13,11 @@ This module provides exporter for web and node to be used with [opentelemetry-co
 npm install --save @opentelemetry/exporter-collector-grpc
 ```
 
+## Service Name
+
+The OpenTelemetry Collector Exporter does not have a service name configuration.
+In order to set the service name, use the `service.name` resource attribute as prescribed in the [OpenTelemetry Resource Semantic Conventions][semconv-resource-service-name].
+
 ## Traces in Node - GRPC
 
 The CollectorTraceExporter in Node expects the URL to only be the hostname. It will not work with `/v1/traces`.
@@ -22,9 +27,8 @@ const { BasicTracerProvider, SimpleSpanProcessor } = require('@opentelemetry/tra
 const { CollectorTraceExporter } =  require('@opentelemetry/exporter-collector-grpc');
 
 const collectorOptions = {
-  serviceName: 'basic-service',
-  // url is optional and can be omitted - default is localhost:4317
-  url: '<collector-hostname>:<port>',
+  // url is optional and can be omitted - default is grpc://localhost:4317
+  url: 'grpc://<collector-hostname>:<port>',
 };
 
 const provider = new BasicTracerProvider();
@@ -47,9 +51,8 @@ const { BasicTracerProvider, SimpleSpanProcessor } = require('@opentelemetry/tra
 const { CollectorTraceExporter } =  require('@opentelemetry/exporter-collector-grpc');
 
 const collectorOptions = {
-  serviceName: 'basic-service',
-  // url is optional and can be omitted - default is localhost:4317
-  url: '<collector-hostname>:<port>',
+  // url is optional and can be omitted - default is grpc://localhost:4317
+  url: 'grpc://<collector-hostname>:<port>',
   credentials: grpc.credentials.createSsl(),
 };
 
@@ -88,9 +91,8 @@ const metadata = new grpc.Metadata();
 metadata.set('k', 'v');
 
 const collectorOptions = {
-  serviceName: 'basic-service',
-  // url is optional and can be omitted - default is localhost:4317
-  url: '<collector-hostname>:<port>',
+  // url is optional and can be omitted - default is grpc://localhost:4317
+  url: 'grpc://<collector-hostname>:<port>',
   metadata, // // an optional grpc.Metadata object to be sent with each request
 };
 
@@ -114,9 +116,8 @@ The CollectorTraceExporter in Node expects the URL to only be the hostname. It w
 const { MeterProvider } = require('@opentelemetry/metrics');
 const { CollectorMetricExporter } =  require('@opentelemetry/exporter-collector-grpc');
 const collectorOptions = {
-  serviceName: 'basic-service',
-  // url is optional and can be omitted - default is localhost:4317
-  url: '<collector-hostname>:<port>',
+  // url is optional and can be omitted - default is grpc://localhost:4317
+  url: 'grpc://<collector-hostname>:<port>',
 };
 const exporter = new CollectorMetricExporter(collectorOptions);
 
@@ -161,3 +162,4 @@ Apache 2.0 - See [LICENSE][license-url] for more information.
 [npm-url]: https://www.npmjs.com/package/@opentelemetry/exporter-collector-grpc
 [npm-img]: https://badge.fury.io/js/%40opentelemetry%2Fexporter-collector-grpc.svg
 [opentelemetry-collector-url]: https://github.com/open-telemetry/opentelemetry-collector
+[semconv-resource-service-name]: https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/resource/semantic_conventions/README.md#service

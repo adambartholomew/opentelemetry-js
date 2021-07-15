@@ -234,7 +234,7 @@ describe('fetch', () => {
     );
 
     rootSpan = webTracerWithZone.startSpan('root');
-    api.context.with(api.setSpan(api.context.active(), rootSpan), () => {
+    api.context.with(api.trace.setSpan(api.context.active(), rootSpan), () => {
       fakeNow = 0;
       void getData(fileUrl, method)
         .then(
@@ -310,7 +310,7 @@ describe('fetch', () => {
       const span: tracing.ReadableSpan = exportSpy.args[1][0][0];
       assert.strictEqual(
         span.parentSpanId,
-        rootSpan.context().spanId,
+        rootSpan.spanContext().spanId,
         'parent span is not root span'
       );
     });
@@ -430,7 +430,7 @@ describe('fetch', () => {
       const parentSpan: tracing.ReadableSpan = exportSpy.args[1][0][0];
       assert.strictEqual(
         span.parentSpanId,
-        parentSpan.spanContext.spanId,
+        parentSpan.spanContext().spanId,
         'parent span is not root span'
       );
     });
@@ -509,17 +509,17 @@ describe('fetch', () => {
       const span: api.Span = exportSpy.args[1][0][0];
       assert.strictEqual(
         lastResponse.headers[X_B3_TRACE_ID],
-        span.context().traceId,
+        span.spanContext().traceId,
         `trace header '${X_B3_TRACE_ID}' not set`
       );
       assert.strictEqual(
         lastResponse.headers[X_B3_SPAN_ID],
-        span.context().spanId,
+        span.spanContext().spanId,
         `trace header '${X_B3_SPAN_ID}' not set`
       );
       assert.strictEqual(
         lastResponse.headers[X_B3_SAMPLED],
-        String(span.context().traceFlags),
+        String(span.spanContext().traceFlags),
         `trace header '${X_B3_SAMPLED}' not set`
       );
     });
@@ -571,7 +571,7 @@ describe('fetch', () => {
       });
       it('should debug info that injecting headers was skipped', () => {
         assert.strictEqual(
-          spyDebug.lastCall.args[0],
+          spyDebug.lastCall.args[1],
           'headers inject skipped due to CORS policy'
         );
       });
@@ -693,7 +693,7 @@ describe('fetch', () => {
       const span: tracing.ReadableSpan = exportSpy.args[1][0][0];
       assert.strictEqual(
         span.parentSpanId,
-        rootSpan.context().spanId,
+        rootSpan.spanContext().spanId,
         'parent span is not root span'
       );
     });
@@ -712,7 +712,7 @@ describe('fetch', () => {
       const span: tracing.ReadableSpan = exportSpy.args[1][0][0];
       assert.strictEqual(
         span.parentSpanId,
-        rootSpan.context().spanId,
+        rootSpan.spanContext().spanId,
         'parent span is not root span'
       );
     });

@@ -34,16 +34,6 @@ import { VERSION } from './version';
 // safe enough
 const OBSERVER_WAIT_TIME_MS = 300;
 
-// Used to normalize relative URLs
-let a: HTMLAnchorElement | undefined;
-const getUrlNormalizingAnchor = () => {
-  if (!a) {
-    a = document.createElement('a');
-  }
-
-  return a;
-};
-
 export interface FetchCustomAttributeFunction {
   (
     span: api.Span,
@@ -114,7 +104,7 @@ export class FetchInstrumentation extends InstrumentationBase<
       {
         startTime: corsPreFlightRequest[web.PerformanceTimingNames.FETCH_START],
       },
-      api.setSpan(api.context.active(), span)
+      api.trace.setSpan(api.context.active(), span)
     );
     web.addSpanNetworkEvents(childSpan, corsPreFlightRequest);
     childSpan.end(
@@ -159,7 +149,7 @@ export class FetchInstrumentation extends InstrumentationBase<
       const headers: Partial<Record<string, unknown>> = {};
       api.propagation.inject(api.context.active(), headers);
       if (Object.keys(headers).length > 0) {
-        api.diag.debug('headers inject skipped due to CORS policy');
+        this._diag.debug('headers inject skipped due to CORS policy');
       }
       return;
     }
@@ -198,7 +188,7 @@ export class FetchInstrumentation extends InstrumentationBase<
     options: Partial<Request | RequestInit> = {}
   ): api.Span | undefined {
     if (core.isUrlIgnored(url, this._getConfig().ignoreUrls)) {
-      api.diag.debug('ignoring span as url matches ignored url');
+      this._diag.debug('ignoring span as url matches ignored url');
       return;
     }
     const method = (options.method || 'GET').toUpperCase();
@@ -385,7 +375,7 @@ export class FetchInstrumentation extends InstrumentationBase<
 
         return new Promise((resolve, reject) => {
           return api.context.with(
-            api.setSpan(api.context.active(), createdSpan),
+            api.trace.setSpan(api.context.active(), createdSpan),
             () => {
               plugin._addHeaders(options, url);
               plugin._tasksCount++;
@@ -417,7 +407,7 @@ export class FetchInstrumentation extends InstrumentationBase<
             return;
           }
 
-          api.diag.error('applyCustomAttributesOnSpan', error);
+          this._diag.error('applyCustomAttributesOnSpan', error);
         },
         true
       );
@@ -438,7 +428,7 @@ export class FetchInstrumentation extends InstrumentationBase<
 
     const observer: PerformanceObserver = new PerformanceObserver(list => {
       const perfObsEntries = list.getEntries() as PerformanceResourceTiming[];
-      const urlNormalizingAnchor = getUrlNormalizingAnchor();
+      const urlNormalizingAnchor = web.getUrlNormalizingAnchor();
       urlNormalizingAnchor.href = spanUrl;
       perfObsEntries.forEach(entry => {
         if (
@@ -458,10 +448,10 @@ export class FetchInstrumentation extends InstrumentationBase<
   /**
    * implements enable function
    */
-  enable() {
+  override enable() {
     if (isWrapped(window.fetch)) {
       this._unwrap(window, 'fetch');
-      api.diag.debug('removing previous patch for constructor');
+      this._diag.debug('removing previous patch for constructor');
     }
     this._wrap(window, 'fetch', this._patchConstructor());
   }
@@ -469,7 +459,7 @@ export class FetchInstrumentation extends InstrumentationBase<
   /**
    * implements unpatch function
    */
-  disable() {
+  override disable() {
     this._unwrap(window, 'fetch');
     this._usedResources = new WeakSet<PerformanceResourceTiming>();
   }
